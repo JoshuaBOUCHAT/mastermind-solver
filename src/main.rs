@@ -20,7 +20,11 @@ impl Combination {
 }
 impl Default for Combination {
     fn default() -> Self {
-        let colors = core::array::from_fn(|i| i as u8);
+        let mut colors = [0; N];
+        for i in 2..N {
+            colors[i] = (i - 1) as u8;
+        }
+
         Self { colors }
     }
 }
@@ -128,10 +132,10 @@ fn read_response() -> (u8, u8) {
 fn main() {
     let all_combinations: Vec<Combination> = generate_all_combinations();
     let mut actual = all_combinations.clone();
-
-    println!("Premier passage prenez les couleurs 0, 1, 2, 3");
-    let (misplaced, well_placed) = read_response();
     let first_guess = Combination::default();
+    println!("Premier passage prenez les couleurs :{:?}", &first_guess);
+
+    let (misplaced, well_placed) = read_response();
 
     actual = filter_with_response(actual, first_guess, misplaced, well_placed);
 
