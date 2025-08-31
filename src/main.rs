@@ -1,4 +1,8 @@
+use std::sync::{Arc, Mutex};
 use std::{collections::HashSet, io::stdin, usize};
+
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 const N: usize = 4;
 const NB_COLORS: usize = 8;
@@ -109,7 +113,7 @@ fn find_ideal_combination(
             worst_case = worst_case.max(remaining); // plutôt que somme
         }
         if worst_case < min_count {
-            println!("find a better combination: {:?}", &guess);
+            //println!("find a better combination: {:?}", &guess);
             min_count = worst_case;
             best_combination = guess;
         }
@@ -152,4 +156,36 @@ fn main() {
             println!("La réposne est: {:?}", actual[0]);
         }
     }
+}
+
+#[test]
+fn test_all_case() {
+    let all_combinations: Vec<Combination> = generate_all_combinations();
+    let counter = Arc::new(Mutex::new(0));
+
+    all_combinations.par_iter().all(|&answer| {
+        let counter = counter.clone();
+        let mut guess = Combination::default();
+        let mut actual = all_combinations.clone();
+        let mut i = 0;
+        while i < 5 {
+            let (misplaced, well_placed) = guess_and_answer_to_response(guess, answer);
+            actual = filter_with_response(actual, guess, misplaced, well_placed);
+            guess = find_ideal_combination(&all_combinations, &actual);
+            i += 1;
+            match actual.len() {
+                0 => panic!("Essemble des solution vides !!!"),
+                1 => {
+                    let count = *counter.lock().unwrap() + 1;
+                    *counter.lock().unwrap() = count;
+                    if count % 16 == 0 {
+                        println!("Reaching {} out of {}", count, all_combinations.len())
+                    }
+                    return true;
+                }
+                _ => (),
+            }
+        }
+        false
+    });
 }
